@@ -187,45 +187,62 @@ function legModal(t,existing,journey='outbound'){const l=existing||{};modal(exis
 // A single view of the same per-step tasks used by each trip's Checklist tab.
 let checklistFilter='pending';
 function renderChecklist(){
-  setTitle('To-do / Checklist','ALL YOUR JOURNEY TASKS');
+  setTitle('To-do / Checklist','YOUR TRAVEL TASKS');
   const activeTrips=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));
-  const all=activeTrips.flatMap(t=>(t.legs||[]).flatMap(l=>(l.tasks||[]).map(task=>({t,l,task}))));
+  const all=activeTrips.flatMap(t=>[
+    ...(t.tasks||[]).map(task=>({t,l:null,task})),
+    ...(t.legs||[]).flatMap(l=>(l.tasks||[]).map(task=>({t,l,task})))
+  ]);
   const doneCount=all.filter(x=>x.task.done).length;
   const pendingCount=all.length-doneCount;
-  const shown=all.filter(x=>checklistFilter==='all'||(checklistFilter==='completed'?x.task.done:!x.task.done));
+  const visible=task=>checklistFilter==='all'||(checklistFilter==='completed'?task.done:!task.done);
   const groups=activeTrips.map(t=>{
-    const steps=(t.legs||[]).filter(l=>(l.tasks||[]).some(task=>shown.some(x=>x.t.id===t.id&&x.l.id===l.id&&x.task.id===task.id)));
-    if(!steps.length)return '';
     const tripTasks=all.filter(x=>x.t.id===t.id);
+    const generalTasks=(t.tasks||[]).filter(visible);
+    const steps=(t.legs||[]).filter(l=>(l.tasks||[]).some(visible));
+    const generalHTML=`<section class="checklist-general"><div class="checklist-general-title"><div><h4>General trip tasks</h4><span class="muted small">For things unrelated to a particular journey step</span></div></div>
+      ${generalTasks.map(task=>`<div class="checklist-general-row"><label class="checklist-task ${task.done?'is-complete':''}"><input type="checkbox" data-general-trip="${escapeHTML(t.id)}" data-general-task="${escapeHTML(task.id)}" ${task.done?'checked':''}><span>${escapeHTML(task.text)}</span></label><button type="button" class="icon-btn checklist-delete" data-general-remove-trip="${escapeHTML(t.id)}" data-general-remove-task="${escapeHTML(task.id)}" aria-label="Remove task">×</button></div>`).join('')||'<p class="muted small checklist-no-tasks">No tasks in this filter.</p>'}
+      <form class="checklist-add-form" data-general-add="${escapeHTML(t.id)}"><input name="text" required maxlength="200" placeholder="e.g. Buy tea for my sister" aria-label="New general trip task"><button type="submit" class="btn primary smallbtn">＋ Add task</button></form></section>`;
     const sectionHTML=['outbound','return'].map(section=>{
       const sectionSteps=steps.filter(l=>journeyOf(t,l)===section).sort((a,b)=>(a.date+' '+(a.time||'')).localeCompare(b.date+' '+(b.time||'')));
       if(!sectionSteps.length)return '';
       return `<div class="checklist-journey"><h4>${section==='return'?'↩ Return journey':'↗ Outbound journey'}</h4>${sectionSteps.map(l=>{
-        const tasks=(l.tasks||[]).filter(task=>shown.some(x=>x.t.id===t.id&&x.l.id===l.id&&x.task.id===task.id));
+        const tasks=(l.tasks||[]).filter(visible);
         const legCount=(l.tasks||[]).filter(task=>task.done).length;
         return `<section class="checklist-step"><div class="checklist-step-header"><div><span class="checklist-step-icon">${legEmoji[l.type]||'◉'}</span><strong>${escapeHTML(l.title)}</strong><div class="muted small">${escapeHTML(l.date?fmt(l.date):'Date not set')} · ${legCount}/${(l.tasks||[]).length} completed</div></div><button type="button" class="btn ghost smallbtn" data-check-step="${escapeHTML(t.id)}" data-check-leg="${escapeHTML(l.id)}">View step</button></div>
         ${tasks.map(task=>`<label class="checklist-task ${task.done?'is-complete':''}"><input type="checkbox" data-check-trip="${escapeHTML(t.id)}" data-check-journey="${escapeHTML(l.id)}" data-check-task="${escapeHTML(task.id)}" ${task.done?'checked':''}><span>${escapeHTML(task.text)}</span></label>`).join('')}</section>`;
       }).join('')}</div>`;
     }).join('');
-    return `<section class="checklist-trip"><div class="checklist-trip-header"><div><h3>${escapeHTML(t.name)}</h3><p class="muted small">${fmt(t.start)} – ${fmt(t.end)} · ${tripTasks.filter(x=>x.task.done).length}/${tripTasks.length} completed</p></div><button class="btn ghost smallbtn" data-check-trip-open="${escapeHTML(t.id)}">Open trip</button></div>${sectionHTML}</section>`;
-  }).filter(Boolean).join('');
-  $('#content').innerHTML=`<div class="welcome"><div><h2>Everything left to do</h2><p>Check off travel preparations across your upcoming trips. Changes sync with each journey step.</p></div></div>
+    return `<section class="checklist-trip"><div class="checklist-trip-header"><div><h3>${escapeHTML(t.name)}</h3><p class="muted small">${fmt(t.start)} – ${fmt(t.end)} · ${tripTasks.filter(x=>x.task.done).length}/${tripTasks.length} completed</p></div><button class="btn ghost smallbtn" data-check-trip-open="${escapeHTML(t.id)}">Open trip</button></div>${generalHTML}${sectionHTML}</section>`;
+  }).join('');
+  $('#content').innerHTML=`<div class="welcome"><div><h2>Everything left to do</h2><p>Manage general trip tasks and preparations for each flight, train or transfer.</p></div></div>
     <div class="card checklist-dashboard"><div class="checklist-summary"><div><strong>${pendingCount}</strong><span>To do</span></div><div><strong>${doneCount}</strong><span>Completed</span></div><div><strong>${all.length?Math.round(100*doneCount/all.length):0}%</strong><span>Ready</span></div></div>
     <div class="checklist-filters"><button type="button" class="btn smallbtn ${checklistFilter==='pending'?'primary':'ghost'}" data-check-filter="pending">To do</button><button type="button" class="btn smallbtn ${checklistFilter==='completed'?'primary':'ghost'}" data-check-filter="completed">Completed</button><button type="button" class="btn smallbtn ${checklistFilter==='all'?'primary':'ghost'}" data-check-filter="all">All tasks</button></div></div>
-    ${groups||`<div class="card checklist-empty"><strong>${checklistFilter==='pending'?'All caught up!':checklistFilter==='completed'?'No completed tasks yet':'No checklist tasks yet'}</strong><p class="muted small">${activeTrips.length?'Switch filters or open a trip to add checklist tasks to a journey step.':'Create a trip and add journey steps to build your checklist.'}</p></div>`}`;
+    ${groups||'<div class="card checklist-empty"><strong>No active trips yet</strong><p class="muted small">Create a trip to start your checklist.</p></div>'}`;
   document.querySelectorAll('[data-check-filter]').forEach(b=>b.onclick=()=>{checklistFilter=b.dataset.checkFilter;renderChecklist()});
   document.querySelectorAll('[data-check-trip-open]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.checkTripOpen;currentLeg=null;tab='tasks';render()});
   document.querySelectorAll('[data-check-step]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.checkStep;currentLeg=b.dataset.checkLeg;tab='tasks';render()});
-  document.querySelectorAll('[data-check-task]').forEach(b=>b.onchange=async()=>{
-    const t=trips.find(t=>t.id===b.dataset.checkTrip);
-    const l=t?.legs.find(l=>l.id===b.dataset.checkJourney);
-    const task=l?.tasks.find(x=>x.id===b.dataset.checkTask);
-    if(!task)return;
-    const original=task.done;
-    task.done=b.checked;
-    b.disabled=true;
+  document.querySelectorAll('[data-general-add]').forEach(form=>form.onsubmit=async e=>{
+    e.preventDefault();const t=trips.find(x=>x.id===form.dataset.generalAdd);
+    const text=form.elements.text.value.trim();if(!t||!text)return;
+    const task={id:uid(),text,done:false};(t.tasks||(t.tasks=[])).push(task);
+    const button=form.querySelector('button');button.disabled=true;
+    try{await save();checklistFilter='pending';renderChecklist();toast('General trip task saved')}
+    catch(err){t.tasks=t.tasks.filter(x=>x.id!==task.id);button.disabled=false;toast('Task not saved: '+err.message)}
+  });
+  document.querySelectorAll('[data-general-task], [data-check-task]').forEach(b=>b.onchange=async()=>{
+    const t=trips.find(x=>x.id===(b.dataset.generalTrip||b.dataset.checkTrip));
+    const l=b.dataset.checkJourney?t?.legs.find(x=>x.id===b.dataset.checkJourney):null;
+    const task=(l?l.tasks:t?.tasks||[]).find(x=>x.id===(b.dataset.generalTask||b.dataset.checkTask));
+    if(!task)return;const old=task.done;task.done=b.checked;b.disabled=true;
     try{await save();renderChecklist()}
-    catch(err){task.done=original;b.disabled=false;b.checked=original;toast('Could not save checklist update: '+err.message)}
+    catch(err){task.done=old;b.checked=old;b.disabled=false;toast('Task not saved: '+err.message)}
+  });
+  document.querySelectorAll('[data-general-remove-task]').forEach(b=>b.onclick=async()=>{
+    const t=trips.find(x=>x.id===b.dataset.generalRemoveTrip);if(!t)return;
+    const old=(t.tasks||[]).slice();t.tasks=old.filter(task=>task.id!==b.dataset.generalRemoveTask);b.disabled=true;
+    try{await save();renderChecklist();toast('Task removed')}
+    catch(err){t.tasks=old;b.disabled=false;toast('Could not remove task: '+err.message)}
   });
 }
 function renderWalletJourneys(t,steps){
