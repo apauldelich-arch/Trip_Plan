@@ -118,7 +118,8 @@ function renderWalletJourneys(t,steps){
               <strong style="margin-top:13px;word-break:break-word">${escapeHTML(d.name)}</strong>
               <small>${escapeHTML(l.title)}</small>
               <div class="actions-row"><button class="btn ghost smallbtn" data-wallet-open="${d.id}">Open file ↗</button></div>
-            </div>`;
+            </div>`).join('')}</div>
+        </div>`;
   return ['outbound','return'].map(section=>{
     const sectionSteps=steps.filter(({l})=>journeyOf(t,l)===section).sort((a,b)=>(a.l.date+' '+(a.l.time||'')).localeCompare(b.l.date+' '+(b.l.time||'')));
     if(!sectionSteps.length)return '';
@@ -141,8 +142,7 @@ function renderWallet(){
           <p class="muted small">${escapeHTML(t.destination||'')} · ${steps.reduce((n,s)=>n+s.docs.length,0)} saved file(s)</p></div>
         <button class="btn ghost smallbtn" data-wallet-trip="${t.id}">View trip</button>
       </div>
-      ${renderWalletJourneys(t,steps)}</div>
-        </div>`).join('')}
+      ${renderWalletJourneys(t,steps)}
     </section>`).join('');
   $('#content').innerHTML=`<div class="welcome"><div><h2>Travel documents by journey</h2><p>Find each ticket beneath its trip and the flight, train, or transfer it belongs to.</p></div></div><div class="card"><div class="section-title"><h3>Saved files</h3><span class="muted small">${total} documents</span></div>${groups.length?sections:'<div class="empty-state"><div class="big">▤</div><strong>Nothing saved yet</strong>Open a journey step to attach a screenshot, PDF or ticket.</div>'}<p class="helper">Private files sync with your signed-in account. Open files through short-lived secure links.</p></div>`;
   document.querySelectorAll('[data-wallet-open]').forEach(b=>b.onclick=()=>openFile(b.dataset.walletOpen));
