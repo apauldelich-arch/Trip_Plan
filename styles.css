@@ -254,3 +254,12 @@
  .checklist-add-form input{padding:11px 9px;font-size:12px}
  .checklist-add-form .btn{font-size:11px;padding:9px;white-space:nowrap}
 }
+
+/* Clearer contrast between trip / journey headers and white document cards */
+.wallet-trip-header{background:#dcece5;border-bottom:2px solid #a6cbbd}
+.wallet-trip-header .eyebrow{color:#326d61}
+.wallet-trip-header h3{color:#153f37}
+.wallet-trip-header .muted{color:#557970}
+.wallet-journey-header{background:#d3e6dd;color:#125846;border-top:2px solid #abcdbd;border-bottom:1px solid #b8d5c8}
+.wallet-journey-header span{color:#436d61}
+.wallet-step-group{background:#fff}
