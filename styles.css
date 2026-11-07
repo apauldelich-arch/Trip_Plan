@@ -4,3 +4,11 @@
 /* V1.1: explicit edit and rescheduling controls */
 .doc-row{flex-wrap:wrap}.doc-row>div[style]{min-width:180px!important;flex-basis:45%}.doc-row .btn{white-space:normal}.btn.danger{color:#b0443b;border-color:#f0d3d0}.badge.travel-delayed,.badge.travel-cancelled{background:#fff0e3;color:#a55422}.badge.travel-rescheduled{background:#e5efff;color:#355ea7}.status-text{text-transform:capitalize;color:#b56b33!important;font-weight:700}
 .auth-tabs{display:flex;gap:8px;margin:22px 0 12px}.auth-tabs button{flex:1;border:1px solid #bfd2d3;background:transparent;border-radius:12px;padding:10px;cursor:pointer;color:#183943;font-weight:700}.auth-tabs button:focus{outline:2px solid #198a75}#auth-form input{width:100%;margin-bottom:12px}#forgot{margin-top:10px}.danger{color:#b44840!important}
+/* Calendar navigation: accessible today marker and jump control */
+.today-btn{border:1px solid #cdded6;background:#f2faf5;color:#0b6657;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.today-btn:hover{background:#dff2e7;border-color:#8acdb6}
+.today-btn:focus-visible,.date-cell:focus-visible{outline:3px solid #0e7564;outline-offset:2px}
+.date-cell.is-today{border:2px solid #0b705f;box-shadow:inset 0 0 0 1px #fff;color:#075d50;font-weight:900}
+.date-cell.is-today.has-trip{background:#d4f2e2}
+.date-cell.is-today::after{content:"";position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:#0b705f}
+.date-cell{position:relative}
