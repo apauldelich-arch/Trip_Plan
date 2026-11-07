@@ -140,3 +140,17 @@
 .status-text{display:inline-block}
 .leg-box .status-text{color:#397e69!important}
 .leg-box .status-text:not(:empty){font-size:11px}
+
+/* Manual trip archive in Overview; completed trips stay editable and retain their files. */
+.trip-archive{margin-top:20px;border-top:1px solid #e3ebe8;padding-top:17px}
+.trip-archive>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;padding:6px 0;color:#173b36}
+.trip-archive>summary::-webkit-details-marker{display:none}
+.trip-archive>summary:focus-visible{outline:2px solid #0b665c;outline-offset:3px;border-radius:5px}
+.archive-heading{font-size:15px;font-weight:800;display:flex;align-items:center;gap:9px}
+.archive-heading>span{color:#34846d;font-size:19px}
+.archive-summary-end{display:flex;align-items:center;gap:12px}
+.archive-chevron{font-size:20px;display:inline-block;transition:transform .2s}
+.trip-archive[open] .archive-chevron{transform:rotate(180deg)}
+.archive-list{margin-top:16px}
+.archive-empty{padding:15px 12px;font-size:12px;color:#81929b;line-height:1.6;background:#f6f9f7;border-radius:11px}
+@media(max-width:700px){.trip-archive{margin-top:18px;padding-top:14px}.archive-heading{font-size:14px}.trip-archive>summary{min-height:44px}}
