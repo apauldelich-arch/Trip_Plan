@@ -99,7 +99,29 @@ function calendarHTML(){const year=month.getFullYear(),m=month.getMonth(),days=n
 function bindCal(){for(const b of document.querySelectorAll('[data-today]'))b.onclick=goToday;for(const b of document.querySelectorAll('[data-month]'))b.onclick=()=>changeMonth(Number(b.dataset.month));for(const b of document.querySelectorAll('[data-date]'))b.onclick=()=>{const date=b.dataset.date;const matching=trips.filter(t=>t.start<=date&&t.end>=date);if(matching.length){currentTrip=matching[0].id;currentLeg=null;render()}else toast('No trip on '+fmt(date)+' — create one to get started')}}
 function tripItem(t){return `<button class="trip-item" data-trip="${t.id}"><span class="trip-icon">✈</span><span class="trip-copy"><span class="trip-title">${escapeHTML(t.name)}</span><span class="trip-meta">${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} journey steps</span></span><span class="badge ${t.status==='completed'?'complete':'planned'}">${t.status==='completed'?'Completed':'Planned'}</span></button>`}
 function bindTrips(){document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.trip;currentLeg=null;render()})}
-function renderOverview(){setTitle('Good to see you, '+name.split(' ')[0],'YOUR TRAVEL WORKSPACE');const upcoming=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));const t=upcoming[0];$('#content').innerHTML=`<div class="welcome"><div><h2>Your journeys at a glance</h2><p>One space for every connection, ticket and travel detail.</p></div></div><div class="grid-main"><div><div class="card"><div id="calendar-holder">${calendarHTML()}</div><div class="helper">● Dates shaded in green contain a saved trip. Select a date to open it.</div></div></div><div><div class="upcoming-hero"><div class="eyebrow">NEXT ADVENTURE</div><h3>${t?escapeHTML(t.name):'Your next journey awaits'}</h3><p>${t?`${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} steps ready to organise`:'Start a trip and build your first travel timeline.'}</p><button class="btn" id="hero-open">${t?'Open journey →':'Create a trip →'}</button></div><div class="card"><div class="section-title"><h3>Your next trips</h3><span class="muted small">${trips.length} total</span></div><div class="trip-list">${trips.length?trips.slice().sort((a,b)=>b.start.localeCompare(a.start)).map(tripItem).join(''):'<div class="empty-state">No trips yet</div>'}</div></div></div></div>`;bindCal();bindTrips();$('#hero-open').onclick=()=>{if(t){currentTrip=t.id;currentLeg=null;render()}else addTripModal()}}
+function renderOverview(){
+  setTitle('Good to see you, '+name.split(' ')[0],'YOUR TRAVEL WORKSPACE');
+  const upcoming=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));
+  const archived=trips.filter(t=>t.status==='completed').sort((a,b)=>b.end.localeCompare(a.end));
+  const t=upcoming[0];
+  $('#content').innerHTML=`<div class="welcome"><div><h2>Your journeys at a glance</h2><p>One space for every connection, ticket and travel detail.</p></div></div>
+    <div class="grid-main">
+      <div><div class="card"><div id="calendar-holder">${calendarHTML()}</div><div class="helper">● Dates shaded in green contain a saved trip. Select a date to open it.</div></div></div>
+      <div>
+        <div class="upcoming-hero"><div class="eyebrow">NEXT ADVENTURE</div><h3>${t?escapeHTML(t.name):'Your next journey awaits'}</h3><p>${t?`${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} steps ready to organise`:'Start a trip and build your first travel timeline.'}</p><button class="btn" id="hero-open">${t?'Open journey →':'Create a trip →'}</button></div>
+        <div class="card">
+          <div class="section-title"><h3>Upcoming &amp; Active</h3><span class="muted small">${upcoming.length} ${upcoming.length===1?'trip':'trips'}</span></div>
+          <div class="trip-list">${upcoming.length?upcoming.map(tripItem).join(''):'<div class="archive-empty">No upcoming trips. Create a new trip to get started.</div>'}</div>
+          <details class="trip-archive" id="trip-archive">
+            <summary><span class="archive-heading"><span aria-hidden="true">▤</span> Trip Archive</span><span class="archive-summary-end"><span class="muted small">${archived.length} ${archived.length===1?'trip':'trips'}</span><span class="archive-chevron" aria-hidden="true">⌄</span></span></summary>
+            <div class="trip-list archive-list">${archived.length?archived.map(tripItem).join(''):'<div class="archive-empty">Completed trips will appear here. Mark a trip as Completed using Edit trip &amp; dates.</div>'}</div>
+          </details>
+        </div>
+      </div>
+    </div>`;
+  bindCal();bindTrips();
+  $('#hero-open').onclick=()=>{if(t){currentTrip=t.id;currentLeg=null;render()}else addTripModal()};
+}
 function selectedTrip(){return trips.find(t=>t.id===currentTrip)}
 function getLeg(t){return t.legs.find(l=>l.id===currentLeg)||t.legs[0]}
 const legEmoji={plane:'✈',bus:'🚌',train:'▰',underground:'Ⓤ',walk:'↟',taxi:'◆',other:'◉'};
