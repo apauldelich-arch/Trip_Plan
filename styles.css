@@ -12,3 +12,16 @@
 .date-cell.is-today.has-trip{background:#d4f2e2}
 .date-cell.is-today::after{content:"";position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:#0b705f}
 .date-cell{position:relative}
+
+/* Document wallet — group files by trip and journey step */
+.wallet-trip-group{margin-top:22px;border:1px solid #e0e9e6;border-radius:16px;overflow:hidden;background:#fff}
+.wallet-trip-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;background:#f0f7f4;border-bottom:1px solid #e0e9e6}
+.wallet-trip-header h3{font-size:20px;margin:5px 0}
+.wallet-trip-header p{margin:0}
+.wallet-step-group{padding:20px 22px;border-top:1px solid #eaf0ee}
+.wallet-step-group:first-of-type{border-top:0}
+.wallet-step-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.wallet-step-header strong{font-size:15px}
+.wallet-step-header .muted{margin-top:5px}
+.wallet-step-group .wallet-grid{margin-top:10px}
+@media(max-width:620px){.wallet-trip-header,.wallet-step-header{align-items:flex-start;flex-direction:column}.wallet-trip-header,.wallet-step-group{padding:15px}.wallet-trip-header h3{font-size:18px}}
