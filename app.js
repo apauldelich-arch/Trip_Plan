@@ -101,7 +101,7 @@ $('#mobile-nav').onclick=()=>$('.sidebar').classList.toggle('open');$('#new-trip
 $('#reset-demo').onclick=async()=>{if(!cloudUser)return;if(confirm('Delete all cloud trip metadata for your account? Remove attached documents first if you also want to delete their stored files.')){trips=[];await save();currentTrip=null;view='overview';render()}};
 for(const b of document.querySelectorAll('.nav'))b.onclick=()=>{view=b.dataset.view;currentTrip=null;$('.sidebar').classList.remove('open');render()};
 function setTitle(title,subtitle){$('#page-title').innerHTML=escapeHTML(title)+'<span class="brand-dot">.</span>';$('#page-subtitle').textContent=subtitle;for(const b of document.querySelectorAll('.nav'))b.classList.toggle('active',b.dataset.view===view)}
-function render(){if(currentTrip){renderTrip();return}if(view==='documents')renderWallet();else renderOverview()}
+function render(){if(currentTrip){renderTrip();return}if(view==='documents')renderWallet();else if(view==='checklist')renderChecklist();else renderOverview()}
 function monthLabel(){return month.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
 function changeMonth(n){month=new Date(month.getFullYear(),month.getMonth()+n,1);render()}
 function goToday(){const now=new Date();month=new Date(now.getFullYear(),now.getMonth(),1);currentTrip=null;view='overview';render()}
@@ -184,6 +184,50 @@ function addTripModal(existing){const t=existing||{};modal(existing?'Edit trip':
   }
 }}
 function legModal(t,existing,journey='outbound'){const l=existing||{};modal(existing?'Edit journey step':'Add journey step',`<form id="leg-form"><div class="input-wrap"><label>Journey section</label><select name="journey"><option value="outbound" ${(existing?journeyOf(t,l):journey)==='outbound'?'selected':''}>Outbound journey</option><option value="return" ${(existing?journeyOf(t,l):journey)==='return'?'selected':''}>Return journey</option></select></div><div class="input-wrap"><label>Transport type</label><select name="type">${['plane','bus','train','underground','car','walk','taxi','other'].map(k=>`<option value="${k}" ${l.type===k?'selected':''}>${k==='underground'?'Underground (Tube)':k==='car'?'Car (Driving)':k==='other'?'Other':k[0].toUpperCase()+k.slice(1)}</option>`).join('')}</select></div><div class="input-wrap"><label>Step title</label><input name="title" required maxlength="100" placeholder="e.g. National Express to Stansted" value="${escapeHTML(l.title||'')}"></div><div class="field-row"><div class="input-wrap"><label>From</label><input name="from" placeholder="Departure location" value="${escapeHTML(l.from||'')}"></div><div class="input-wrap"><label>To</label><input name="to" placeholder="Arrival location" value="${escapeHTML(l.to||'')}"></div></div><div class="field-row"><div class="input-wrap"><label>Date</label><input name="date" type="date" required value="${l.date||(journey==='return'?t.end:t.start)}"></div><div class="input-wrap"><label>Departure time</label><input name="time" type="time" value="${l.time||''}"></div></div><div class="input-wrap"><label>Arrival time (as shown locally)</label><input name="arrival" type="time" value="${l.arrival||''}"></div><div class="input-wrap"><label>Journey status</label><select name="travelStatus">${[['scheduled','Scheduled'],['delayed','Delayed'],['rescheduled','Rescheduled'],['cancelled','Cancelled'],['completed','Completed'],...(l.type==='plane'?[['landed','Landed']]:[])].map(([val,label])=>`<option value="${val}" ${l.travelStatus===val?'selected':''}>${label}</option>`).join('')}</select></div><div class="input-wrap"><label>Notes / references</label><textarea name="details" rows="3" placeholder="Platform, luggage, instructions, booking reference...">${escapeHTML(l.details||'')}</textarea></div><p class="helper">Changing the departure date updates its position on the timeline. Trip start and end dates automatically extend to include all steps; they never shorten automatically.</p><div class="form-actions"><button type="button" class="btn ghost" id="cancel">Cancel</button>${existing?'<button type="button" class="btn ghost" id="delete-leg" style="color:#bc574e">Delete</button>':''}<button class="btn primary">Save step</button></div></form>`);$('#cancel').onclick=closeModal;if(existing)$('#delete-leg').onclick=async()=>{if(confirm('Delete this journey step, including its stored documents?')){for(const doc of existing.documents){try{await deleteFile(doc.id)}catch(e){toast('Some stored files could not be deleted')}}t.legs=t.legs.filter(x=>x.id!==existing.id);currentLeg=null;save();closeModal();renderTrip()}};$('#leg-form').onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target));if(existing)Object.assign(existing,v);else{const n={id:uid(),...v,tasks:[],documents:[]};t.legs.push(n);currentLeg=n.id}const datesExtended=expandTripDates(t);save();closeModal();tab='docs';renderTrip();toast(datesExtended?'Journey step saved · Trip dates extended':'Journey step saved')}}
+// A single view of the same per-step tasks used by each trip's Checklist tab.
+let checklistFilter='pending';
+function renderChecklist(){
+  setTitle('To-do / Checklist','ALL YOUR JOURNEY TASKS');
+  const activeTrips=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));
+  const all=activeTrips.flatMap(t=>(t.legs||[]).flatMap(l=>(l.tasks||[]).map(task=>({t,l,task}))));
+  const doneCount=all.filter(x=>x.task.done).length;
+  const pendingCount=all.length-doneCount;
+  const shown=all.filter(x=>checklistFilter==='all'||(checklistFilter==='completed'?x.task.done:!x.task.done));
+  const groups=activeTrips.map(t=>{
+    const steps=(t.legs||[]).filter(l=>(l.tasks||[]).some(task=>shown.some(x=>x.t.id===t.id&&x.l.id===l.id&&x.task.id===task.id)));
+    if(!steps.length)return '';
+    const tripTasks=all.filter(x=>x.t.id===t.id);
+    const sectionHTML=['outbound','return'].map(section=>{
+      const sectionSteps=steps.filter(l=>journeyOf(t,l)===section).sort((a,b)=>(a.date+' '+(a.time||'')).localeCompare(b.date+' '+(b.time||'')));
+      if(!sectionSteps.length)return '';
+      return `<div class="checklist-journey"><h4>${section==='return'?'↩ Return journey':'↗ Outbound journey'}</h4>${sectionSteps.map(l=>{
+        const tasks=(l.tasks||[]).filter(task=>shown.some(x=>x.t.id===t.id&&x.l.id===l.id&&x.task.id===task.id));
+        const legCount=(l.tasks||[]).filter(task=>task.done).length;
+        return `<section class="checklist-step"><div class="checklist-step-header"><div><span class="checklist-step-icon">${legEmoji[l.type]||'◉'}</span><strong>${escapeHTML(l.title)}</strong><div class="muted small">${escapeHTML(l.date?fmt(l.date):'Date not set')} · ${legCount}/${(l.tasks||[]).length} completed</div></div><button type="button" class="btn ghost smallbtn" data-check-step="${escapeHTML(t.id)}" data-check-leg="${escapeHTML(l.id)}">View step</button></div>
+        ${tasks.map(task=>`<label class="checklist-task ${task.done?'is-complete':''}"><input type="checkbox" data-check-trip="${escapeHTML(t.id)}" data-check-journey="${escapeHTML(l.id)}" data-check-task="${escapeHTML(task.id)}" ${task.done?'checked':''}><span>${escapeHTML(task.text)}</span></label>`).join('')}</section>`;
+      }).join('')}</div>`;
+    }).join('');
+    return `<section class="checklist-trip"><div class="checklist-trip-header"><div><h3>${escapeHTML(t.name)}</h3><p class="muted small">${fmt(t.start)} – ${fmt(t.end)} · ${tripTasks.filter(x=>x.task.done).length}/${tripTasks.length} completed</p></div><button class="btn ghost smallbtn" data-check-trip-open="${escapeHTML(t.id)}">Open trip</button></div>${sectionHTML}</section>`;
+  }).filter(Boolean).join('');
+  $('#content').innerHTML=`<div class="welcome"><div><h2>Everything left to do</h2><p>Check off travel preparations across your upcoming trips. Changes sync with each journey step.</p></div></div>
+    <div class="card checklist-dashboard"><div class="checklist-summary"><div><strong>${pendingCount}</strong><span>To do</span></div><div><strong>${doneCount}</strong><span>Completed</span></div><div><strong>${all.length?Math.round(100*doneCount/all.length):0}%</strong><span>Ready</span></div></div>
+    <div class="checklist-filters"><button type="button" class="btn smallbtn ${checklistFilter==='pending'?'primary':'ghost'}" data-check-filter="pending">To do</button><button type="button" class="btn smallbtn ${checklistFilter==='completed'?'primary':'ghost'}" data-check-filter="completed">Completed</button><button type="button" class="btn smallbtn ${checklistFilter==='all'?'primary':'ghost'}" data-check-filter="all">All tasks</button></div></div>
+    ${groups||`<div class="card checklist-empty"><strong>${checklistFilter==='pending'?'All caught up!':checklistFilter==='completed'?'No completed tasks yet':'No checklist tasks yet'}</strong><p class="muted small">${activeTrips.length?'Switch filters or open a trip to add checklist tasks to a journey step.':'Create a trip and add journey steps to build your checklist.'}</p></div>`}`;
+  document.querySelectorAll('[data-check-filter]').forEach(b=>b.onclick=()=>{checklistFilter=b.dataset.checkFilter;renderChecklist()});
+  document.querySelectorAll('[data-check-trip-open]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.checkTripOpen;currentLeg=null;tab='tasks';render()});
+  document.querySelectorAll('[data-check-step]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.checkStep;currentLeg=b.dataset.checkLeg;tab='tasks';render()});
+  document.querySelectorAll('[data-check-task]').forEach(b=>b.onchange=async()=>{
+    const t=trips.find(t=>t.id===b.dataset.checkTrip);
+    const l=t?.legs.find(l=>l.id===b.dataset.checkJourney);
+    const task=l?.tasks.find(x=>x.id===b.dataset.checkTask);
+    if(!task)return;
+    const original=task.done;
+    task.done=b.checked;
+    b.disabled=true;
+    try{await save();renderChecklist()}
+    catch(err){task.done=original;b.disabled=false;b.checked=original;toast('Could not save checklist update: '+err.message)}
+  });
+}
 function renderWalletJourneys(t,steps){
   const stepHTML=({l,docs})=>`
         <div class="wallet-step-group">
