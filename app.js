@@ -100,7 +100,7 @@ function bindCal(){for(const b of document.querySelectorAll('[data-today]'))b.on
 function tripItem(t){return `<button class="trip-item" data-trip="${t.id}"><span class="trip-icon">✈</span><span class="trip-copy"><span class="trip-title">${escapeHTML(t.name)}</span><span class="trip-meta">${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} journey steps</span></span><span class="badge ${t.status==='completed'?'complete':'planned'}">${t.status==='completed'?'Completed':'Planned'}</span></button>`}
 function bindTrips(){document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.trip;currentLeg=null;render()})}
 function renderOverview(){
-  setTitle('Good to see you, '+name.split(' ')[0],'YOUR TRAVEL WORKSPACE');
+  setTitle('Where are we going?','YOUR TRAVEL WORKSPACE');
   const upcoming=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));
   const archived=trips.filter(t=>t.status==='completed').sort((a,b)=>b.end.localeCompare(a.end));
   const t=upcoming[0];
