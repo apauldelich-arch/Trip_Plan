@@ -8,11 +8,31 @@ function expandTripDates(t){let changed=false;for(const leg of t.legs||[]){const
 function preserveJourneySections(t){let changed=false;for(const leg of t.legs||[]){if(leg.journey!=='outbound'&&leg.journey!=='return'){leg.journey=journeyOf(t,leg);changed=true}}return changed}
 const seed=()=>[{id:uid(),name:'Madrid & Valencia',destination:'Spain',start:'2026-12-04',end:'2026-12-07',status:'upcoming',legs:[{id:uid(),type:'bus',title:'Coach to airport',from:'Central London',to:'Stansted Airport',date:'2026-12-04',time:'03:18',arrival:'05:00',details:'Check coach stop and live status',tasks:[{id:uid(),text:'Save coach ticket',done:false}],documents:[]},{id:uid(),type:'plane',title:'Flight to Madrid',from:'Stansted',to:'Madrid',date:'2026-12-04',time:'06:15',arrival:'09:20',details:'Arrival time is local. Allow time for security and baggage.',tasks:[{id:uid(),text:'Check in online',done:false},{id:uid(),text:'Confirm baggage allowance',done:false}],documents:[]},{id:uid(),type:'train',title:'Train to Valencia',from:'Madrid',to:'Valencia',date:'2026-12-05',time:'07:15',arrival:'09:15',details:'Illustrative rail connection',tasks:[],documents:[]},{id:uid(),type:'plane',title:'Flight home',from:'Valencia',to:'London',date:'2026-12-07',time:'11:10',arrival:'13:10',details:'Arrival time is London local time',tasks:[{id:uid(),text:'Save return boarding pass',done:false}],documents:[]}]}];
 let trips=[],currentTrip=null,currentLeg=null,view='overview',month=new Date();
+let bankHolidays=new Map();
+async function loadBankHolidays(){
+  // Official England & Wales calendar, including substitute bank holidays.
+  try{
+    const cached=localStorage.getItem('tripplan-ew-bank-holidays');
+    if(cached){const data=JSON.parse(cached);bankHolidays=new Map(data.map(e=>[e.date,e.title]));}
+  }catch(e){console.warn('Bank holiday cache unavailable',e)}
+  try{
+    const response=await fetch('https://www.gov.uk/bank-holidays.json');
+    if(!response.ok)throw Error('Bank holiday request failed');
+    const json=await response.json();
+    const events=json['england-and-wales']?.events||[];
+    if(!Array.isArray(events)||!events.length)throw Error('Bank holiday data unavailable');
+    bankHolidays=new Map(events.map(e=>[e.date,e.title]));
+    try{localStorage.setItem('tripplan-ew-bank-holidays',JSON.stringify(events.map(e=>({date:e.date,title:e.title}))))}catch(e){}
+    if(cloudUser&&view==='overview'&&!currentTrip)renderOverview();
+  }catch(e){console.warn('Bank holidays unavailable; keeping cached dates',e)}
+}
+
 let name='Traveller',email='',fileTarget=null,cloudUser=null,client=null,writeQueue=Promise.resolve(),loadingUser=false;
 const cfg=window.WAYMARK_CONFIG||{};
 const configured=Boolean(cfg.supabaseUrl&&cfg.supabasePublishableKey&&!cfg.supabaseUrl.includes('YOUR_'));
 const stateChip=()=>{const e=$('.local-chip');if(e)e.textContent=cloudUser?'● Private cloud sync':'● Sign in required'};
 async function boot(){
+  loadBankHolidays();
   if(!configured){$('#auth-message').textContent='Cloud setup required: configure a dedicated Supabase project first. See README.';$('#auth-submit').disabled=true;return}
   try{
     const sdk=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm');
@@ -96,7 +116,7 @@ function calendarTripLabel(t,date){
   if(!directions.length)return t.name;
   return directions.map(d=>t.name+' ('+(d==='return'?'Return':'Outbound')+')').join(' · ');
 }
-function calendarHTML(){const year=month.getFullYear(),m=month.getMonth(),days=new Date(year,m+1,0).getDate(),offset=(new Date(year,m,1).getDay()+6)%7;let html='<div class="card-header"><h3>'+monthLabel()+'</h3><div class="calendar-nav"><button class="today-btn" type="button" data-today title="Jump to current month">Today</button><button class="icon-btn" data-month="-1" aria-label="Previous month">‹</button><button class="icon-btn" data-month="1" aria-label="Next month">›</button></div></div><div class="calendar-grid">';for(const d of ['M','T','W','T','F','S','S'])html+='<div class="dow">'+d+'</div>';for(let i=0;i<offset;i++)html+='<div class="date-cell empty"></div>';for(let i=1;i<=days;i++){const date=year+'-'+String(m+1).padStart(2,'0')+'-'+String(i).padStart(2,'0');const matching=trips.filter(t=>t.start<=date&&t.end>=date);const has=matching.length>0;const today=new Date();const isToday=today.getFullYear()===year&&today.getMonth()===m&&today.getDate()===i;const tripNames=matching.map(t=>calendarTripLabel(t,date)).join(' · ');const accessible=(isToday?'Today, ':'')+fmt(date)+(has?', '+tripNames:'');html+='<button class="date-cell '+(has?'has-trip ':'')+(isToday?'is-today ':'')+'" data-date="'+date+'" aria-label="'+escapeHTML(accessible)+'"'+(isToday?' aria-current="date"':'')+(has?' data-trip-tooltip="'+escapeHTML(tripNames)+'"':'')+'>'+i+(has?'<span class="dot"></span>':'')+'</button>'}return html+'</div>'}
+function calendarHTML(){const year=month.getFullYear(),m=month.getMonth(),days=new Date(year,m+1,0).getDate(),offset=(new Date(year,m,1).getDay()+6)%7;let html='<div class="card-header"><h3>'+monthLabel()+'</h3><div class="calendar-nav"><button class="today-btn" type="button" data-today title="Jump to current month">Today</button><button class="icon-btn" data-month="-1" aria-label="Previous month">‹</button><button class="icon-btn" data-month="1" aria-label="Next month">›</button></div></div><div class="calendar-grid">';for(const d of ['M','T','W','T','F','S','S'])html+='<div class="dow">'+d+'</div>';for(let i=0;i<offset;i++)html+='<div class="date-cell empty"></div>';for(let i=1;i<=days;i++){const date=year+'-'+String(m+1).padStart(2,'0')+'-'+String(i).padStart(2,'0');const matching=trips.filter(t=>t.start<=date&&t.end>=date);const has=matching.length>0;const today=new Date();const isToday=today.getFullYear()===year&&today.getMonth()===m&&today.getDate()===i;const holiday=bankHolidays.get(date);const weekend=(new Date(year,m,i).getDay()%6===0);const tripNames=matching.map(t=>calendarTripLabel(t,date)).join(' · ');const tooltip=[holiday,tripNames].filter(Boolean).join(' · ');const accessible=(isToday?'Today, ':'')+fmt(date)+(holiday?', '+holiday:'')+(has?', '+tripNames:'');html+='<button class="date-cell '+(has?'has-trip ':'')+(isToday?'is-today ':'')+(weekend?'is-weekend ':'')+(holiday?'is-bank-holiday ':'')+'" data-date="'+date+'" aria-label="'+escapeHTML(accessible)+'"'+(isToday?' aria-current="date"':'')+(holiday?' title="'+escapeHTML(holiday)+'"':'')+(tooltip?' data-trip-tooltip="'+escapeHTML(tooltip)+'"':'')+'>'+i+(has?'<span class="dot"></span>':'')+(holiday?'<span class="holiday-mark" aria-hidden="true"></span>':'')+'</button>'}return html+'</div>'}
 function bindCal(){for(const b of document.querySelectorAll('[data-today]'))b.onclick=goToday;for(const b of document.querySelectorAll('[data-month]'))b.onclick=()=>changeMonth(Number(b.dataset.month));for(const b of document.querySelectorAll('[data-date]'))b.onclick=()=>{const date=b.dataset.date;const matching=trips.filter(t=>t.start<=date&&t.end>=date);if(matching.length){currentTrip=matching[0].id;currentLeg=null;render()}else toast('No trip on '+fmt(date)+' — create one to get started')}}
 function tripItem(t){return `<button class="trip-item" data-trip="${t.id}"><span class="trip-icon">✈</span><span class="trip-copy"><span class="trip-title">${escapeHTML(t.name)}</span><span class="trip-meta">${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} journey steps</span></span><span class="badge ${t.status==='completed'?'complete':'planned'}">${t.status==='completed'?'Completed':'Planned'}</span></button>`}
 function bindTrips(){document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.trip;currentLeg=null;render()})}
@@ -107,7 +127,7 @@ function renderOverview(){
   const t=upcoming[0];
   $('#content').innerHTML=`<div class="welcome"><div><h2>Your journeys at a glance</h2><p>One space for every connection, ticket and travel detail.</p></div></div>
     <div class="grid-main">
-      <div><div class="card"><div id="calendar-holder">${calendarHTML()}</div><div class="helper">● Dates shaded in green contain a saved trip. Select a date to open it.</div></div></div>
+      <div><div class="card"><div id="calendar-holder">${calendarHTML()}</div><div class="helper"><span class="calendar-legend"><span class="legend-item"><i class="legend-dot trip-dot"></i> Trip</span><span class="legend-item"><i class="legend-dot bank-dot"></i> England &amp; Wales bank holiday</span><span class="legend-item"><i class="legend-dot weekend-dot"></i> Weekend</span></span></div></div></div>
       <div>
         <div class="upcoming-hero"><div class="eyebrow">NEXT ADVENTURE</div><h3>${t?escapeHTML(t.name):'Your next journey awaits'}</h3><p>${t?`${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} steps ready to organise`:'Start a trip and build your first travel timeline.'}</p><button class="btn" id="hero-open">${t?'Open journey →':'Create a trip →'}</button></div>
         <div class="card">
