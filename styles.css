@@ -236,3 +236,21 @@
   .checklist-step{padding:11px}
   .checklist-step-header .btn{padding:8px;font-size:11px;white-space:nowrap}
 }
+
+/* Trip-level to-dos, separate from journey step checklists */
+.checklist-general{padding:17px 0 8px;border-bottom:1px solid #e8efeb}
+.checklist-general-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.checklist-general-title h4{font-size:14px;color:#176552;margin:0 0 3px}
+.checklist-general-row{display:flex;align-items:center;gap:5px;border-top:1px solid #edf1ef}
+.checklist-general-row .checklist-task{flex:1;min-width:0;border-top:0}
+.checklist-delete{min-height:40px;min-width:40px;font-size:21px;flex-shrink:0}
+.checklist-add-form{display:flex;gap:9px;align-items:center;margin:12px 0 10px}
+.checklist-add-form input{min-width:0;flex:1;font-size:13px}
+.checklist-add-form .btn{min-height:44px}
+.checklist-no-tasks{margin:0 0 12px}
+@media(max-width:700px){
+ .checklist-general{padding-top:14px}
+ .checklist-add-form{gap:6px}
+ .checklist-add-form input{padding:11px 9px;font-size:12px}
+ .checklist-add-form .btn{font-size:11px;padding:9px;white-space:nowrap}
+}
