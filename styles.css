@@ -165,3 +165,38 @@
 #tab-login{display:inline-block;margin-left:12px}
 @media(max-width:700px){.auth-panel>p{margin-bottom:24px}.auth-actions{gap:10px;margin-top:20px}.auth-actions .btn{min-height:48px;font-size:13px}.auth-panel .field-label{margin-top:16px}}
 @media(max-width:360px){.auth-actions{gap:8px}.auth-actions .btn{font-size:12px;padding:11px 7px}}
+
+/* Calendar: grey Saturday/Sunday columns and dark-red England & Wales bank holidays. */
+.calendar-grid>.dow:nth-child(7n+6),.calendar-grid>.dow:nth-child(7n+7){
+  background:#eef0f1;color:#647178;border-radius:8px;padding-top:7px;
+}
+.calendar-grid>.date-cell:nth-child(7n+6),.calendar-grid>.date-cell:nth-child(7n+7){
+  background:#eef0f1;color:#647178;
+}
+.calendar-grid>.date-cell.empty:nth-child(7n+6),.calendar-grid>.date-cell.empty:nth-child(7n+7){
+  visibility:visible;pointer-events:none;opacity:.55;
+}
+/* Existing trip highlighting remains green on weekends. */
+.calendar-grid>.date-cell.has-trip{background:#e3f2ea;color:#0c6556}
+.calendar-grid>.date-cell.is-today{border-color:#0b705f}
+.calendar-grid>.date-cell.is-bank-holiday{
+  background:#f6e4e5;color:#871d2c;font-weight:900;border-color:#cf8791;
+}
+.calendar-grid>.date-cell.is-bank-holiday.has-trip{
+  background:#e3f2ea;color:#871d2c;border:2px solid #9f2736;
+}
+.date-cell .holiday-mark{
+  position:absolute;top:4px;right:5px;width:6px;height:6px;
+  border-radius:50%;background:#8f1b2b;box-shadow:0 0 0 1px #fff8;
+}
+.calendar-grid>.date-cell.is-bank-holiday:hover{filter:brightness(.96)}
+.calendar-legend{display:flex;align-items:center;flex-wrap:wrap;gap:9px 15px;font-size:11px}
+.legend-item{display:inline-flex;align-items:center;gap:6px}
+.legend-dot{width:10px;height:10px;display:inline-block;border-radius:3px;flex-shrink:0}
+.legend-dot.trip-dot{background:#c5e8d5}
+.legend-dot.bank-dot{background:#8f1b2b}
+.legend-dot.weekend-dot{background:#dfe3e5}
+@media(max-width:700px){
+  .date-cell .holiday-mark{width:5px;height:5px;right:3px;top:3px}
+  .calendar-legend{font-size:10px;gap:7px 12px}
+}
