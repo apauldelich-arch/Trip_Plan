@@ -200,3 +200,39 @@
   .date-cell .holiday-mark{width:5px;height:5px;right:3px;top:3px}
   .calendar-legend{font-size:10px;gap:7px 12px}
 }
+
+/* Unified travel checklist: uses the same tasks as each journey step. */
+.checklist-dashboard{margin-bottom:18px}
+.checklist-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:19px}
+.checklist-summary>div{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;padding:16px 7px;background:#f3f8f6}
+.checklist-summary strong{font:800 25px Manrope,'DM Sans',sans-serif;color:#146c59}
+.checklist-summary span{font-size:11px;color:#718985}
+.checklist-filters{display:flex;gap:8px;flex-wrap:wrap}
+.checklist-trip{background:white;border:1px solid #e3ece8;border-radius:18px;padding:22px;margin-bottom:18px}
+.checklist-trip-header{display:flex;justify-content:space-between;align-items:center;gap:15px;padding-bottom:13px;border-bottom:1px solid #e7eeeb}
+.checklist-trip-header h3{margin:0 0 5px;font-size:18px}
+.checklist-trip-header p{margin:0}
+.checklist-journey{padding-top:16px}
+.checklist-journey h4{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#438672;margin:4px 0 12px}
+.checklist-step{border:1px solid #ebf0ed;border-radius:13px;padding:14px;margin:0 0 11px}
+.checklist-step-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.checklist-step-header>div{min-width:0}
+.checklist-step-header strong{font-size:13px;overflow-wrap:anywhere}
+.checklist-step-header .muted{margin-top:5px;margin-left:27px}
+.checklist-step-icon{display:inline-block;width:24px;font-size:19px;vertical-align:middle}
+.checklist-task{display:flex;gap:11px;align-items:flex-start;padding:11px 6px;border-top:1px solid #edf1ef;cursor:pointer;line-height:1.5;overflow-wrap:anywhere}
+.checklist-task input{accent-color:#0b8163;flex:0 0 auto;width:18px;height:18px;margin:2px 0 0}
+.checklist-task span{flex:1;min-width:0}
+.checklist-task.is-complete span{text-decoration:line-through;color:#8a9c99}
+.checklist-empty{text-align:center;padding:32px 16px}
+.checklist-empty strong{display:block;margin-bottom:10px}
+@media(max-width:700px){
+  .checklist-trip{padding:15px;border-radius:16px}
+  .checklist-summary>div{padding:13px 5px}
+  .checklist-summary strong{font-size:22px}
+  .checklist-trip-header{align-items:flex-start;gap:8px}
+  .checklist-trip-header h3{font-size:15px}
+  .checklist-trip-header .btn{padding:8px;font-size:11px}
+  .checklist-step{padding:11px}
+  .checklist-step-header .btn{padding:8px;font-size:11px;white-space:nowrap}
+}
