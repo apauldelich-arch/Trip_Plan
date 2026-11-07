@@ -131,3 +131,6 @@
   .date-cell[data-trip-tooltip]:hover::before{opacity:0;visibility:hidden}
   .date-cell[data-trip-tooltip]:focus-visible::before{opacity:1;visibility:visible}
 }
+
+/* Mobile Overview: the Your Trips list replaces the redundant Next Adventure card. */
+@media(max-width:700px){.upcoming-hero{display:none}}
