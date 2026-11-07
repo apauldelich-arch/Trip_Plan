@@ -58,8 +58,9 @@ function showPasswordRecovery(){
   modal('Set a new password',`<form id="recover-form"><div class="input-wrap"><label>New password</label><input type="password" id="new-password" required minlength="8" autocomplete="new-password"></div><button class="btn primary">Update password</button></form>`);
   $('#recover-form').onsubmit=async e=>{e.preventDefault();const password=$('#new-password').value;const {error}=await client.auth.updateUser({password});if(error){toast(error.message);return}closeModal();toast('Password updated')};
 }
-function authMode(mode){$('#auth-submit').textContent=mode==='signup'?'Create private account →':mode==='reset'?'Send reset email →':'Sign in securely →';$('#password-wrap').classList.toggle('hidden',mode==='reset');$('#auth-mode').value=mode;$('#auth-message').textContent=''}
-$('#tab-login').onclick=()=>authMode('login');$('#tab-signup').onclick=()=>authMode('signup');$('#forgot').onclick=()=>authMode('reset');
+function authMode(mode){$('#auth-submit').textContent=mode==='reset'?'Send reset email →':'Sign in';$('#password-wrap').classList.toggle('hidden',mode==='reset');$('#tab-signup').classList.toggle('hidden',mode==='reset');$('#tab-login').classList.toggle('hidden',mode!=='reset');$('#forgot').classList.toggle('hidden',mode==='reset');$('#auth-mode').value=mode;$('#auth-message').textContent=''}
+$('#tab-login').onclick=()=>authMode('login');$('#tab-signup').onclick=()=>{authMode('signup');$('#auth-form').requestSubmit()};$('#forgot').onclick=()=>authMode('reset');
+$('#auth-submit').addEventListener('click',()=>{if($('#auth-mode').value!=='reset')$('#auth-mode').value='login'});
 $('#auth-form').onsubmit=async e=>{
   e.preventDefault();if(!client)return;
   const mode=$('#auth-mode').value,mail=$('#auth-email').value.trim(),password=$('#auth-password').value;
@@ -193,10 +194,22 @@ const bucket='waymark-documents';
 const docLocation=id=>{for(const t of trips)for(const l of t.legs)for(const d of l.documents){if(d.id===id)return d}return null};
 async function deleteFile(id){const d=docLocation(id);if(!d?.path)return;const {error}=await client.storage.from(bucket).remove([d.path]);if(error)throw error}
 async function openFile(id){
-  try{const d=docLocation(id);if(!d?.path)throw Error('File not found');
-    const {data,error}=await client.storage.from(bucket).createSignedUrl(d.path,90);
-    if(error)throw error;window.open(data.signedUrl,'_blank','noopener,noreferrer')
-  }catch(e){toast('Unable to open private file: '+e.message)}
+  // Open the tab during the user's tap, before awaiting a signed URL.
+  // Mobile Safari blocks window.open() when called after asynchronous work.
+  const d=docLocation(id);
+  if(!d?.path){toast('File not found. Please try uploading it again.');return}
+  const preview=window.open('about:blank','_blank');
+  if(preview){try{preview.opener=null;preview.document.title='Opening document…';preview.document.body.textContent='Opening your private document…'}catch(e){}}
+  try{
+    const {data,error}=await client.storage.from(bucket).createSignedUrl(d.path,120);
+    if(error)throw error;
+    if(!data?.signedUrl)throw Error('Secure link unavailable');
+    if(preview&&!preview.closed)preview.location.replace(data.signedUrl);
+    else window.location.assign(data.signedUrl);
+  }catch(e){
+    if(preview&&!preview.closed)preview.close();
+    toast('Unable to open private file: '+e.message);
+  }
 }
 $('#file-input').onchange=async e=>{
   const target=fileTarget,file=e.target.files[0];e.target.value='';if(!file||!target||!cloudUser)return;
