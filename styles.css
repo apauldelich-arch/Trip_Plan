@@ -263,3 +263,63 @@
 .wallet-journey-header{background:#d3e6dd;color:#125846;border-top:2px solid #abcdbd;border-bottom:1px solid #b8d5c8}
 .wallet-journey-header span{color:#436d61}
 .wallet-step-group{background:#fff}
+
+/* Consistent sage hierarchy across Calendar, trip details, checklists and documents.
+   Darker tint is reserved for section/group headers; content remains white. */
+:root{
+  --section-sage:#dcece5;
+  --subsection-sage:#e5f0eb;
+  --sage-outline:#aacbbd;
+  --sage-ink:#174e43;
+  --secondary-ink:#56766e;
+}
+/* Overview: make grouped trips visually distinct from white calendar/content */
+.grid-main .section-title{background:var(--section-sage);border:1px solid var(--sage-outline);border-radius:11px;padding:12px 14px;margin-bottom:14px}
+.grid-main .section-title h3{color:var(--sage-ink)}
+.grid-main .section-title .muted{color:var(--secondary-ink)}
+.trip-item{border-color:#d4e4dc;background:#f8fbf9}
+.trip-item:hover,.trip-item:focus-visible{background:#eff7f2;border-color:#7fb39d}
+.trip-item .trip-meta{color:#57756e}
+.trip-icon{background:#d5ebe0}
+.trip-archive{border-top-color:#bcd7ca}
+.trip-archive>summary{background:var(--subsection-sage);border:1px solid #c5dccf;border-radius:10px;padding:11px 13px}
+.trip-archive[open]>summary{background:var(--section-sage);border-color:var(--sage-outline)}
+/* Journey timeline: distinguish journey headers, selected leg and details */
+.journey-section-header{background:var(--subsection-sage);border:1px solid #d0e2d7;border-radius:12px;padding:13px}
+.journey-section-header h4{color:var(--sage-ink)}
+.journey-section-kicker{color:#397563}
+.journey-return .journey-section-header{background:var(--section-sage);border-color:var(--sage-outline)}
+.leg-box{background:#fff;border-color:#dce8e1}
+.leg-box.on{background:#dcece5;border-color:#7da995}
+.leg-box:hover{background:#ecf6ef}
+.leg-box small{color:#58746e}
+.leg-time .muted,.detail-sub{color:#617d77}
+.detail-layout .card>.card-header{background:var(--subsection-sage);border:1px solid #d0e2d7;border-radius:11px;padding:12px 14px}
+.detail-layout .card>.card-header h3{color:var(--sage-ink)}
+.tab-strip{background:#dcece5}
+.tab{color:#486c61}
+.tab.active{background:#fff;color:#105f4e}
+/* Checklist: trip header and summary clearly delineated from tasks */
+.checklist-trip{border-color:#c8dfd2}
+.checklist-trip-header{background:var(--section-sage);border:1px solid var(--sage-outline);border-radius:11px;padding:13px 14px;margin-bottom:4px}
+.checklist-trip-header h3{color:var(--sage-ink)}
+.checklist-trip-header .muted{color:var(--secondary-ink)}
+.checklist-general-title{background:var(--subsection-sage);border:1px solid #cfe2d6;border-radius:10px;padding:12px 13px}
+.checklist-general-title h4{color:var(--sage-ink)}
+.checklist-summary>div{background:var(--subsection-sage);border:1px solid #cfdfd6}
+.checklist-summary span{color:var(--secondary-ink)}
+.checklist-task{color:#243d39}
+.checklist-task.is-complete span{color:#6e8580}
+/* Common secondary text, without losing the emphasis of primary headings. */
+.wallet-step-header .muted,.wallet-card small{color:#5d7c74}
+.wallet-step-group{border-top-color:#cbded3}
+.wallet-card{border-color:#d3e3da}
+.quick-note{background:var(--subsection-sage);color:#245d4c}
+.empty-state{border-color:#c4d8cd;color:#607b73}
+.empty-state strong{color:var(--sage-ink)}
+@media(max-width:700px){
+  .grid-main .section-title,.checklist-trip-header{padding:11px 12px}
+  .journey-section-header{padding:11px}
+  .detail-layout .card>.card-header{padding:10px 12px}
+  .trip-archive>summary{padding:10px 12px}
+}
