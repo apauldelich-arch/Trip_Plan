@@ -38,3 +38,17 @@
 .wallet-journey-header strong{font-size:14px}
 .wallet-journey-header span{font-size:11px;color:#7a9290}
 @media(max-width:620px){.journey-section-header{align-items:flex-start}.journey-section-header h4{font-size:15px}.wallet-journey-header{padding:12px 15px}}
+
+/* Calendar hover and keyboard-focus preview for saved trip names */
+.date-cell[data-trip-tooltip]{position:relative}
+.date-cell[data-trip-tooltip]::before{
+  content:attr(data-trip-tooltip);
+  position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%);
+  width:max-content;max-width:min(250px,75vw);white-space:normal;overflow-wrap:anywhere;
+  background:#123c37;color:#fff;border-radius:9px;padding:9px 12px;
+  font-size:12px;font-weight:700;line-height:1.4;text-align:center;
+  box-shadow:0 9px 25px #123c372b;
+  opacity:0;visibility:hidden;pointer-events:none;z-index:30;transition:opacity .12s ease;
+}
+.date-cell[data-trip-tooltip]:hover,.date-cell[data-trip-tooltip]:focus-visible{z-index:35}
+.date-cell[data-trip-tooltip]:hover::before,.date-cell[data-trip-tooltip]:focus-visible::before{opacity:1;visibility:visible}
