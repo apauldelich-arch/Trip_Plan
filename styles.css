@@ -134,3 +134,9 @@
 
 /* Mobile Overview: the Your Trips list replaces the redundant Next Adventure card. */
 @media(max-width:700px){.upcoming-hero{display:none}}
+
+/* Finished journey steps / arrived flights */
+.badge.travel-completed,.badge.travel-landed{background:#e2f4e9;color:#166c51}
+.status-text{display:inline-block}
+.leg-box .status-text{color:#397e69!important}
+.leg-box .status-text:not(:empty){font-size:11px}
