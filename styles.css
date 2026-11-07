@@ -25,3 +25,16 @@
 .wallet-step-header .muted{margin-top:5px}
 .wallet-step-group .wallet-grid{margin-top:10px}
 @media(max-width:620px){.wallet-trip-header,.wallet-step-header{align-items:flex-start;flex-direction:column}.wallet-trip-header,.wallet-step-group{padding:15px}.wallet-trip-header h3{font-size:18px}}
+
+/* Outbound / Return journey organisation */
+.journey-section{margin:14px 0 23px;padding:12px 0 2px;border-top:1px solid #e4ece8}
+.journey-section-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 15px;padding:10px 2px 8px}
+.journey-section-header h4{font-size:17px;color:#143b37;margin:4px 0 5px}
+.journey-section-kicker{font-size:10px;font-weight:800;letter-spacing:.13em;color:#488c79}
+.journey-section-header .btn{white-space:nowrap}
+.journey-empty{padding:16px;border:1px dashed #d8e7e0;border-radius:12px;color:#7a9190;font-size:12px;line-height:1.5;margin:0 0 18px}
+.journey-return .journey-section-header{background:#f4f8f5;border-radius:12px;padding:13px}
+.wallet-journey-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 22px;color:#146552;background:#f6faf8;border-top:1px solid #e2ebe6}
+.wallet-journey-header strong{font-size:14px}
+.wallet-journey-header span{font-size:11px;color:#7a9290}
+@media(max-width:620px){.journey-section-header{align-items:flex-start}.journey-section-header h4{font-size:15px}.wallet-journey-header{padding:12px 15px}}
