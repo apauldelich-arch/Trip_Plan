@@ -212,6 +212,13 @@
 .annual-day.has-trip.planned.is-bank-holiday{background:#b85e14;color:#fff;box-shadow:inset 0 0 0 2px #9f2736}
 .annual-day.has-trip.completed.is-bank-holiday{background:#19715b;color:#fff;box-shadow:inset 0 0 0 2px #9f2736}
 
+/* Monthly Calendar uses the same status colours as the Annual Calendar. */
+.calendar-grid>.date-cell.has-trip.planned{background:#b85e14;color:#fff}
+.calendar-grid>.date-cell.has-trip.completed{background:#19715b;color:#fff}
+.calendar-grid>.date-cell.has-trip .dot{background:#fff}
+.calendar-grid>.date-cell.has-trip.planned.is-bank-holiday{background:#b85e14;color:#fff;border:2px solid #9f2736}
+.calendar-grid>.date-cell.has-trip.completed.is-bank-holiday{background:#19715b;color:#fff;border:2px solid #9f2736}
+
 /* Unified travel checklist: uses the same tasks as each journey step. */
 .checklist-dashboard{margin-bottom:18px}
 .checklist-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:19px}
