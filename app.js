@@ -25,7 +25,7 @@ function consolidateStepTasks(t){
 }
 function preserveJourneySections(t){let changed=false;for(const leg of t.legs||[]){if(leg.journey!=='outbound'&&leg.journey!=='return'){leg.journey=journeyOf(t,leg);changed=true}}return changed}
 const seed=()=>[{id:uid(),name:'Madrid & Valencia',destination:'Spain',start:'2026-12-04',end:'2026-12-07',status:'upcoming',legs:[{id:uid(),type:'bus',title:'Coach to airport',from:'Central London',to:'Stansted Airport',date:'2026-12-04',time:'03:18',arrival:'05:00',details:'Check coach stop and live status',tasks:[{id:uid(),text:'Save coach ticket',done:false}],documents:[]},{id:uid(),type:'plane',title:'Flight to Madrid',from:'Stansted',to:'Madrid',date:'2026-12-04',time:'06:15',arrival:'09:20',details:'Arrival time is local. Allow time for security and baggage.',tasks:[{id:uid(),text:'Check in online',done:false},{id:uid(),text:'Confirm baggage allowance',done:false}],documents:[]},{id:uid(),type:'train',title:'Train to Valencia',from:'Madrid',to:'Valencia',date:'2026-12-05',time:'07:15',arrival:'09:15',details:'Illustrative rail connection',tasks:[],documents:[]},{id:uid(),type:'plane',title:'Flight home',from:'Valencia',to:'London',date:'2026-12-07',time:'11:10',arrival:'13:10',details:'Arrival time is London local time',tasks:[{id:uid(),text:'Save return boarding pass',done:false}],documents:[]}]}];
-let trips=[],currentTrip=null,currentLeg=null,view='overview',month=new Date();
+let trips=[],currentTrip=null,currentLeg=null,view='overview',month=new Date(),annualYear=new Date().getFullYear();
 let bankHolidays=new Map();
 async function loadBankHolidays(){
   // Official England & Wales calendar, including substitute bank holidays.
@@ -119,7 +119,7 @@ $('#mobile-nav').onclick=()=>$('.sidebar').classList.toggle('open');$('#new-trip
 $('#reset-demo').onclick=async()=>{if(!cloudUser)return;if(confirm('Delete all cloud trip metadata for your account? Remove attached documents first if you also want to delete their stored files.')){trips=[];await save();currentTrip=null;view='overview';render()}};
 for(const b of document.querySelectorAll('.nav'))b.onclick=()=>{view=b.dataset.view;currentTrip=null;$('.sidebar').classList.remove('open');render()};
 function setTitle(title,subtitle){$('#page-title').innerHTML=escapeHTML(title)+'<span class="brand-dot">.</span>';$('#page-subtitle').textContent=subtitle;for(const b of document.querySelectorAll('.nav'))b.classList.toggle('active',b.dataset.view===view)}
-function render(){if(currentTrip){renderTrip();return}if(view==='documents')renderWallet();else if(view==='checklist')renderChecklist();else renderOverview()}
+function render(){if(currentTrip){renderTrip();return}if(view==='documents')renderWallet();else if(view==='checklist')renderChecklist();else if(view==='annual')renderAnnualCalendar();else renderOverview()}
 function monthLabel(){return month.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
 function changeMonth(n){month=new Date(month.getFullYear(),month.getMonth()+n,1);render()}
 function goToday(){const now=new Date();month=new Date(now.getFullYear(),now.getMonth(),1);currentTrip=null;view='overview';render()}
@@ -138,6 +138,35 @@ function calendarHTML(){const year=month.getFullYear(),m=month.getMonth(),days=n
 function bindCal(){for(const b of document.querySelectorAll('[data-today]'))b.onclick=goToday;for(const b of document.querySelectorAll('[data-month]'))b.onclick=()=>changeMonth(Number(b.dataset.month));for(const b of document.querySelectorAll('[data-date]'))b.onclick=()=>{const date=b.dataset.date;const matching=trips.filter(t=>t.start<=date&&t.end>=date);if(matching.length){currentTrip=matching[0].id;currentLeg=null;render()}else toast('No trip on '+fmt(date)+' — create one to get started')}}
 function tripItem(t){return `<button class="trip-item" data-trip="${t.id}"><span class="trip-icon">✈</span><span class="trip-copy"><span class="trip-title">${escapeHTML(t.name)}</span><span class="trip-meta">${fmt(t.start)} – ${fmt(t.end)} · ${t.legs.length} journey steps</span></span><span class="badge ${t.status==='completed'?'complete':'planned'}">${t.status==='completed'?'Completed':'Planned'}</span></button>`}
 function bindTrips(){document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.trip;currentLeg=null;render()})}
+function annualMonthHTML(year,m){
+  const monthStart=`${year}-${String(m+1).padStart(2,'0')}-01`,monthEnd=`${year}-${String(m+1).padStart(2,'0')}-${String(new Date(year,m+1,0).getDate()).padStart(2,'0')}`;
+  const monthTrips=trips.filter(t=>t.start<=monthEnd&&t.end>=monthStart);
+  const days=new Date(year,m+1,0).getDate(),offset=(new Date(year,m,1).getDay()+6)%7;
+  const label=new Date(year,m,1).toLocaleDateString('en-GB',{month:'long'});
+  let daysHTML='<div class="annual-weekdays">'+['M','T','W','T','F','S','S'].map(d=>`<span>${d}</span>`).join('')+'</div><div class="annual-days">';
+  for(let i=0;i<offset;i++)daysHTML+='<span class="annual-day annual-empty" aria-hidden="true"></span>';
+  for(let day=1;day<=days;day++){
+    const date=`${year}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const matching=trips.filter(t=>t.start<=date&&t.end>=date);
+    const status=matching.some(t=>t.status!=='completed')?'planned':'completed';
+    const tripNames=matching.map(t=>t.name).join(' · ');
+    const today=new Date(),isToday=today.getFullYear()===year&&today.getMonth()===m&&today.getDate()===day;
+    if(matching.length)daysHTML+=`<button class="annual-day has-trip ${status}${isToday?' is-today':''}" data-annual-trip="${matching[0].id}" aria-label="${escapeHTML(fmt(date)+', '+tripNames+', '+(status==='completed'?'completed':'planned'))}" title="${escapeHTML(tripNames)}">${day}<i aria-hidden="true"></i></button>`;
+    else daysHTML+=`<span class="annual-day${isToday?' is-today':''}">${day}</span>`;
+  }
+  const chips=monthTrips.map(t=>`<button class="annual-trip-chip ${t.status==='completed'?'completed':'planned'}" data-annual-trip="${t.id}"><i aria-hidden="true"></i>${escapeHTML(t.name)}</button>`).join('');
+  return `<section class="annual-month"><button class="annual-month-title" data-annual-month="${m}" aria-label="Open ${label} ${year} in monthly calendar">${label}</button>${daysHTML}</div>${chips?`<div class="annual-trip-chips">${chips}</div>`:'<p class="annual-empty-note">No trips</p>'}</section>`;
+}
+function renderAnnualCalendar(){
+  setTitle('Annual calendar','YOUR TRAVEL YEAR');
+  const yearStart=`${annualYear}-01-01`,yearEnd=`${annualYear}-12-31`,yearTrips=trips.filter(t=>t.start<=yearEnd&&t.end>=yearStart);
+  const completed=yearTrips.filter(t=>t.status==='completed').length,planned=yearTrips.length-completed;
+  $('#content').innerHTML=`<div class="annual-intro"><div><div class="eyebrow">MY TRIP PLANS · ANNUAL CALENDAR</div><h2>${annualYear} at a glance</h2><p>Every planned and completed journey across the year. Select a month for the detailed calendar or a highlighted trip for its journey details.</p></div><div class="annual-year-nav"><button class="icon-btn" type="button" data-annual-year="-1" aria-label="Previous year">‹</button><strong>${annualYear}</strong><button class="icon-btn" type="button" data-annual-year="1" aria-label="Next year">›</button><button class="today-btn" type="button" data-annual-today>Current year</button></div></div><div class="annual-legend"><span><i class="annual-key planned"></i> Planned ${planned?`(${planned})`:''}</span><span><i class="annual-key completed"></i> Completed ${completed?`(${completed})`:''}</span></div><div class="annual-grid">${Array.from({length:12},(_,m)=>annualMonthHTML(annualYear,m)).join('')}</div>`;
+  document.querySelectorAll('[data-annual-year]').forEach(b=>b.onclick=()=>{annualYear+=Number(b.dataset.annualYear);render()});
+  document.querySelector('[data-annual-today]').onclick=()=>{annualYear=new Date().getFullYear();render()};
+  document.querySelectorAll('[data-annual-month]').forEach(b=>b.onclick=()=>{month=new Date(annualYear,Number(b.dataset.annualMonth),1);view='overview';render()});
+  document.querySelectorAll('[data-annual-trip]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.annualTrip;currentLeg=null;render()});
+}
 function renderOverview(){
   setTitle('Where are we going?','YOUR TRAVEL WORKSPACE');
   const upcoming=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));
