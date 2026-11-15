@@ -41,7 +41,7 @@ async function loadBankHolidays(){
     if(!Array.isArray(events)||!events.length)throw Error('Bank holiday data unavailable');
     bankHolidays=new Map(events.map(e=>[e.date,e.title]));
     try{localStorage.setItem('tripplan-ew-bank-holidays',JSON.stringify(events.map(e=>({date:e.date,title:e.title}))))}catch(e){}
-    if(cloudUser&&view==='overview'&&!currentTrip)renderOverview();
+    if(cloudUser&&(view==='overview'||view==='annual')&&!currentTrip)render();
   }catch(e){console.warn('Bank holidays unavailable; keeping cached dates',e)}
 }
 
@@ -151,24 +151,24 @@ function annualMonthHTML(year,m){
     const status=matching.some(t=>t.status!=='completed')?'planned':'completed';
     const tripNames=matching.map(t=>t.name).join(' · ');
     const today=new Date(),isToday=today.getFullYear()===year&&today.getMonth()===m&&today.getDate()===day;
-    if(matching.length)daysHTML+=`<button class="annual-day has-trip ${status}${isToday?' is-today':''}" data-annual-trip="${matching[0].id}" aria-label="${escapeHTML(fmt(date)+', '+tripNames+', '+(status==='completed'?'completed':'planned'))}" title="${escapeHTML(tripNames)}">${day}<i aria-hidden="true"></i></button>`;
-    else daysHTML+=`<span class="annual-day${isToday?' is-today':''}">${day}</span>`;
+    const holiday=bankHolidays.get(date),weekend=(new Date(year,m,day).getDay()%6===0);
+    const classes=`annual-day${matching.length?' has-trip '+status:''}${isToday?' is-today':''}${weekend?' is-weekend':''}${holiday?' is-bank-holiday':''}`;
+    const accessible=[fmt(date),holiday,tripNames,matching.length?(status==='completed'?'completed':'planned'):''].filter(Boolean).join(', ');
+    daysHTML+=`<span class="${classes}" aria-label="${escapeHTML(accessible)}"${holiday||tripNames?` title="${escapeHTML([holiday,tripNames].filter(Boolean).join(' · '))}"`:''}>${day}${matching.length?'<i aria-hidden="true"></i>':''}${holiday?'<b class="annual-holiday-mark" aria-hidden="true"></b>':''}</span>`;
   }
-  const chips=monthTrips.map(t=>`<button class="annual-trip-chip ${t.status==='completed'?'completed':'planned'}" data-annual-trip="${t.id}"><i aria-hidden="true"></i>${escapeHTML(t.name)}</button>`).join('');
-  return `<section class="annual-month"><button class="annual-month-title" data-annual-month="${m}" aria-label="Open ${label} ${year} in monthly calendar">${label}</button>${daysHTML}</div>${chips?`<div class="annual-trip-chips">${chips}</div>`:'<p class="annual-empty-note">No trips</p>'}</section>`;
+  const chips=monthTrips.map(t=>`<span class="annual-trip-chip ${t.status==='completed'?'completed':'planned'}"><i aria-hidden="true"></i>${escapeHTML(t.name)}</span>`).join('');
+  return `<section class="annual-month"><h3 class="annual-month-title">${label}</h3>${daysHTML}</div>${chips?`<div class="annual-trip-chips">${chips}</div>`:'<p class="annual-empty-note">No trips</p>'}</section>`;
 }
 function renderAnnualCalendar(){
-  setTitle('Annual calendar','YOUR TRAVEL YEAR');
+  setTitle('Annual Calendar','YOUR TRAVEL YEAR');
   const yearStart=`${annualYear}-01-01`,yearEnd=`${annualYear}-12-31`,yearTrips=trips.filter(t=>t.start<=yearEnd&&t.end>=yearStart);
   const completed=yearTrips.filter(t=>t.status==='completed').length,planned=yearTrips.length-completed;
-  $('#content').innerHTML=`<div class="annual-intro"><div><div class="eyebrow">MY TRIP PLANS · ANNUAL CALENDAR</div><h2>${annualYear} at a glance</h2><p>Every planned and completed journey across the year. Select a month for the detailed calendar or a highlighted trip for its journey details.</p></div><div class="annual-year-nav"><button class="icon-btn" type="button" data-annual-year="-1" aria-label="Previous year">‹</button><strong>${annualYear}</strong><button class="icon-btn" type="button" data-annual-year="1" aria-label="Next year">›</button><button class="today-btn" type="button" data-annual-today>Current year</button></div></div><div class="annual-legend"><span><i class="annual-key planned"></i> Planned ${planned?`(${planned})`:''}</span><span><i class="annual-key completed"></i> Completed ${completed?`(${completed})`:''}</span></div><div class="annual-grid">${Array.from({length:12},(_,m)=>annualMonthHTML(annualYear,m)).join('')}</div>`;
+  $('#content').innerHTML=`<div class="annual-intro"><div><div class="eyebrow">MY TRIP PLANS · ANNUAL CALENDAR</div><h2>${annualYear} at a glance</h2><p>Every planned and completed journey across the year.</p></div><div class="annual-year-nav"><button class="icon-btn" type="button" data-annual-year="-1" aria-label="Previous year">‹</button><strong>${annualYear}</strong><button class="icon-btn" type="button" data-annual-year="1" aria-label="Next year">›</button><button class="today-btn" type="button" data-annual-today>Current year</button></div></div><div class="annual-legend"><span><i class="annual-key planned"></i> Planned ${planned?`(${planned})`:''}</span><span><i class="annual-key completed"></i> Completed ${completed?`(${completed})`:''}</span><span><i class="annual-key holiday"></i> England &amp; Wales bank holiday</span><span><i class="annual-key weekend"></i> Weekend</span></div><div class="annual-grid">${Array.from({length:12},(_,m)=>annualMonthHTML(annualYear,m)).join('')}</div>`;
   document.querySelectorAll('[data-annual-year]').forEach(b=>b.onclick=()=>{annualYear+=Number(b.dataset.annualYear);render()});
   document.querySelector('[data-annual-today]').onclick=()=>{annualYear=new Date().getFullYear();render()};
-  document.querySelectorAll('[data-annual-month]').forEach(b=>b.onclick=()=>{month=new Date(annualYear,Number(b.dataset.annualMonth),1);view='overview';render()});
-  document.querySelectorAll('[data-annual-trip]').forEach(b=>b.onclick=()=>{currentTrip=b.dataset.annualTrip;currentLeg=null;render()});
 }
 function renderOverview(){
-  setTitle('Where are we going?','YOUR TRAVEL WORKSPACE');
+  setTitle('Monthly Calendar','YOUR TRAVEL WORKSPACE');
   const upcoming=trips.filter(t=>t.status!=='completed').sort((a,b)=>a.start.localeCompare(b.start));
   const archived=trips.filter(t=>t.status==='completed').sort((a,b)=>b.end.localeCompare(a.end));
   const t=upcoming[0];
